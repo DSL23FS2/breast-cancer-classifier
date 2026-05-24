@@ -1,0 +1,11 @@
+{
+  "name": "health_check",
+  "description": "GET /health → status=ok, model_loaded=true",
+  "method": "GET",
+  "url": "http://localhost:8000/health",
+  "expected_status": 200,
+  "expected_body": {
+    "status": "ok",
+    "model_loaded": true
+  }
+}

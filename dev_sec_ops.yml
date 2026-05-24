@@ -1,0 +1,7 @@
+# dev_sec_ops.yml
+# Генерируется автоматически CI pipeline (Jenkinsfile, stage "Security Audit")
+# Содержит SHA последних 5 коммитов для аудита безопасности цепочки поставок
+
+generated_at: ""
+build: ""
+commits: []
