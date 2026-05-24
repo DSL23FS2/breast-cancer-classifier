@@ -22,6 +22,11 @@ RUN pip install --no-cache-dir --break-system-packages dvc
 # ── Docker CLI ────────────────────────────────────────────────
 RUN curl -fsSL https://get.docker.com | sh
 
+# ── Jenkins user → docker group ───────────────────────────────
+# get.docker.com создаёт группу docker (обычно GID 999).
+# Хостовый docker.sock тоже принадлежит этой группе → добавляем jenkins.
+RUN usermod -aG docker jenkins
+
 # ── Плагины Jenkins ───────────────────────────────────────────
 COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
 RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
