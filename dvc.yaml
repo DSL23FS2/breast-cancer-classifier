@@ -10,7 +10,6 @@ stages:
       - data/breast_cancer_valid.csv
       - data/breast_cancer_test.csv
       - data/breast_cancer_featured.csv
-      - data/breast_cancer_orig.csv
 
   train:
     cmd: python src/train.py
