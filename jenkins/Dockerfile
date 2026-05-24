@@ -34,7 +34,8 @@ RUN chown jenkins:jenkins /var/jenkins_home/casc.yaml
 # ── Entrypoint: фиксирует GID docker-сокета, затем запускает Jenkins ─────────
 # USER остаётся root — скрипт сам делает gosu jenkins перед стартом сервера.
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Убираем Windows CRLF (\r\n) → LF, иначе bash не распознает shebang
+RUN sed -i 's/\r$//' /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
 
 ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
 ENV CASC_JENKINS_CONFIG="/var/jenkins_home/casc.yaml"
