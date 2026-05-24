@@ -1,0 +1,21 @@
+{
+  "name": "Functional Test Scenario v1.0",
+  "base_url": "http://localhost:8000",
+  "steps": [
+    {
+      "step": 1,
+      "test_file": "tests/test_2.json",
+      "description": "Health check — сервис запущен"
+    },
+    {
+      "step": 2,
+      "test_file": "tests/test_0.json",
+      "description": "Predict malignant sample"
+    },
+    {
+      "step": 3,
+      "test_file": "tests/test_1.json",
+      "description": "Predict benign sample"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+pydantic==2.11.4
+scikit-learn==1.6.1
+joblib==1.4.2
+pandas==2.2.3
+numpy==2.2.5
+PyYAML==6.0.2
+psycopg2-binary==2.9.10
+hvac==2.3.0
+kafka-python==2.2.10
