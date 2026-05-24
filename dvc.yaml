@@ -1,0 +1,39 @@
+stages:
+  preprocess:
+    cmd: python src/preprocess.py
+    deps:
+      - src/preprocess.py
+      - src/utils.py
+      - config.ini
+    outs:
+      - data/breast_cancer_train.csv
+      - data/breast_cancer_valid.csv
+      - data/breast_cancer_test.csv
+      - data/breast_cancer_featured.csv
+      - data/breast_cancer_orig.csv
+
+  train:
+    cmd: python src/train.py
+    deps:
+      - src/train.py
+      - src/preprocess.py
+      - src/utils.py
+      - config.ini
+      - data/breast_cancer_train.csv
+      - data/breast_cancer_test.csv
+    outs:
+      - experiments/exp_0/trained_model.pkl:
+          cache: true
+    metrics:
+      - experiments/exp_0/metrics.yml:
+          cache: false
+
+  evaluate:
+    cmd: >
+      python -c "
+      import yaml; m=yaml.safe_load(open('experiments/exp_0/metrics.yml'));
+      assert m['accuracy']>=0.95, f'Accuracy {m[\"accuracy\"]} < 0.95';
+      print('Quality gate passed:', m)
+      "
+    deps:
+      - experiments/exp_0/metrics.yml
