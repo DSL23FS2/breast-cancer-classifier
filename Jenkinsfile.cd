@@ -1,0 +1,152 @@
+// Jenkinsfile.cd — CD Pipeline
+// Breast Cancer Classifier v1.0
+// Stages: Pull Image → Compose Up → Functional Tests → Compose Down
+
+pipeline {
+    agent any
+
+    environment {
+        COMPOSE_PROJECT_NAME = "bc"
+        BASE_URL             = "http://localhost:8000"
+        SCENARIO_FILE        = "scenario.json"
+    }
+
+    options {
+        timestamps()
+        timeout(time: 15, unit: 'MINUTES')
+    }
+
+    stages {
+
+        // ── 1. Checkout ───────────────────────────────────────
+        stage('Checkout') {
+            steps {
+                checkout scm
+                sh 'git log --oneline -3'
+            }
+        }
+
+        // ── 2. Pull latest image ──────────────────────────────
+        stage('Pull Image') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKERHUB_USER',
+                        passwordVariable: 'DOCKERHUB_PASS'
+                    )]) {
+                        sh """
+                            echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USER}" --password-stdin
+                            docker pull ${DOCKERHUB_USER}/breast-cancer-api:latest || true
+                            docker logout
+                        """
+                    }
+                }
+            }
+        }
+
+        // ── 3. Docker Compose Up ──────────────────────────────
+        stage('Compose Up') {
+            steps {
+                sh '''
+                    docker compose up -d api
+                '''
+                // Ждём, пока api отдаёт /health
+                sh '''
+                    echo "Waiting for API to be ready..."
+                    for i in $(seq 1 30); do
+                        STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${BASE_URL}/health || echo "000")
+                        if [ "$STATUS" = "200" ]; then
+                            echo "API is ready (attempt $i)"
+                            exit 0
+                        fi
+                        echo "Attempt $i: status=${STATUS}, waiting 3s..."
+                        sleep 3
+                    done
+                    echo "API did not become ready in time"
+                    docker compose logs api
+                    exit 1
+                '''
+            }
+        }
+
+        // ── 4. Functional Tests ───────────────────────────────
+        stage('Functional Tests') {
+            steps {
+                sh '''
+                    python -c "
+import json, sys, urllib.request, urllib.error
+
+with open('${SCENARIO_FILE}') as f:
+    scenario = json.load(f)
+
+base_url = '${BASE_URL}'
+steps = scenario.get('steps', [])
+passed = 0
+failed = 0
+
+for step in steps:
+    step_num   = step['step']
+    test_file  = step['test_file']
+    description = step['description']
+
+    with open(test_file) as tf:
+        test = json.load(tf)
+
+    method      = test.get('method', 'GET')
+    url         = test.get('url', base_url)
+    body        = test.get('body')
+    exp_status  = test.get('expected_status', 200)
+    exp_body    = test.get('expected_body', {})
+
+    try:
+        data = json.dumps(body).encode() if body else None
+        headers = {'Content-Type': 'application/json'} if data else {}
+        req = urllib.request.Request(url, data=data, headers=headers, method=method)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            actual_status = resp.status
+            actual_body = json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        actual_status = e.code
+        actual_body = {}
+    except Exception as e:
+        print(f'Step {step_num} [{description}]: ERROR — {e}')
+        failed += 1
+        continue
+
+    errors = []
+    if actual_status != exp_status:
+        errors.append(f'status {actual_status} != {exp_status}')
+    for k, v in exp_body.items():
+        if actual_body.get(k) != v:
+            errors.append(f'{k}: {actual_body.get(k)!r} != {v!r}')
+
+    if errors:
+        print(f'Step {step_num} [{description}]: FAIL — {errors}')
+        failed += 1
+    else:
+        print(f'Step {step_num} [{description}]: PASS')
+        passed += 1
+
+print(f'\\nResults: {passed} passed, {failed} failed out of {len(steps)} steps')
+if failed > 0:
+    sys.exit(1)
+"
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker compose down || true'
+        }
+        success {
+            echo "CD passed — all functional tests green."
+        }
+        failure {
+            echo "CD failed — collecting logs..."
+            sh 'docker compose logs api || true'
+        }
+    }
+}
