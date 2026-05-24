@@ -27,7 +27,7 @@ credentials:
               password: "${DOCKERHUB_PASS:-}"
               description: "DockerHub credentials"
 
-# ── Seed job (pipeline из workspace) ─────────────────────────
+# ── Seed job (pipeline из GitHub) ────────────────────────────
 jobs:
   - script: |
       pipelineJob('breast-cancer-ci') {
@@ -37,7 +37,7 @@ jobs:
             scm {
               git {
                 remote {
-                  url('/workspace')
+                  url('https://github.com/DSL23FS2/breast-cancer-classifier.git')
                 }
                 branch('*/develop')
               }
@@ -57,7 +57,7 @@ jobs:
             scm {
               git {
                 remote {
-                  url('/workspace')
+                  url('https://github.com/DSL23FS2/breast-cancer-classifier.git')
                 }
                 branch('*/main')
               }

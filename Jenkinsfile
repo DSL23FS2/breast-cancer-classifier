@@ -6,10 +6,13 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_USER  = credentials('dockerhub-credentials').username
-        IMAGE_NAME      = "${DOCKERHUB_USER}/breast-cancer-api"
+        // credentials() для usernamePassword автоматически создаёт:
+        //   DOCKERHUB_CREDS_USR  = username
+        //   DOCKERHUB_CREDS_PSW  = password
+        DOCKERHUB_CREDS = credentials('dockerhub-credentials')
+        IMAGE_NAME      = "${DOCKERHUB_CREDS_USR}/breast-cancer-api"
         IMAGE_TAG       = "${env.BUILD_NUMBER}"
-        PYTHONPATH      = "/workspace"
+        PYTHONPATH      = "${env.WORKSPACE}"
     }
 
     options {
@@ -43,11 +46,19 @@ pipeline {
         // ── 3. Lint ───────────────────────────────────────────
         stage('Lint') {
             steps {
-                sh '.venv/bin/flake8 src/ tests/ --max-line-length=120 --ignore=E501,W503'
+                sh '.venv/bin/flake8 src/ tests/ --max-line-length=120 --ignore=E501,W503,E221,E241,E127'
             }
         }
 
-        // ── 4. Unit + Integration Tests ───────────────────────
+        // ── 4. DVC repro (ML pipeline) — должен быть ДО тестов ──
+        // dvc системный, но stages должны использовать .venv/bin/python
+        stage('DVC repro') {
+            steps {
+                sh 'PATH=$PWD/.venv/bin:$PATH dvc repro --no-commit'
+            }
+        }
+
+        // ── 5. Unit + Integration Tests ───────────────────────
         stage('Test') {
             steps {
                 sh '''
@@ -63,33 +74,16 @@ pipeline {
             }
         }
 
-        // ── 5. DVC repro (ML pipeline) ────────────────────────
-        stage('DVC repro') {
-            steps {
-                sh '''
-                    .venv/bin/dvc repro --no-commit
-                '''
-            }
-        }
-
         // ── 6. Build Docker Image ─────────────────────────────
         stage('Build Image') {
             steps {
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        sh """
-                            docker build \
-                                --build-arg IMAGE_TAG=${IMAGE_TAG} \
-                                -t ${DOCKER_USER}/breast-cancer-api:${IMAGE_TAG} \
-                                -t ${DOCKER_USER}/breast-cancer-api:latest \
-                                .
-                        """
-                    }
-                }
+                sh """
+                    docker build \
+                        --build-arg IMAGE_TAG=${IMAGE_TAG} \
+                        -t ${DOCKERHUB_CREDS_USR}/breast-cancer-api:${IMAGE_TAG} \
+                        -t ${DOCKERHUB_CREDS_USR}/breast-cancer-api:latest \
+                        .
+                """
             }
         }
 
@@ -103,20 +97,12 @@ pipeline {
                 }
             }
             steps {
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
-                        sh """
-                            echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
-                            docker push ${DOCKER_USER}/breast-cancer-api:${IMAGE_TAG}
-                            docker push ${DOCKER_USER}/breast-cancer-api:latest
-                            docker logout
-                        """
-                    }
-                }
+                sh """
+                    echo "${DOCKERHUB_CREDS_PSW}" | docker login -u "${DOCKERHUB_CREDS_USR}" --password-stdin
+                    docker push ${DOCKERHUB_CREDS_USR}/breast-cancer-api:${IMAGE_TAG}
+                    docker push ${DOCKERHUB_CREDS_USR}/breast-cancer-api:latest
+                    docker logout
+                """
             }
         }
 

@@ -3,7 +3,15 @@ import pytest
 from fastapi.testclient import TestClient
 from src.api import app
 
-client = TestClient(app)
+
+# TestClient используется как контекстный менеджер через фикстуру,
+# чтобы корректно запустить lifespan (startup/shutdown).
+# В Starlette ≥ 0.21 lifespan срабатывает только при входе в __enter__.
+@pytest.fixture(scope="module")
+def client():
+    with TestClient(app) as c:
+        yield c
+
 
 MALIGNANT_FEATURES = [
     17.99, 10.38, 122.8, 1001.0, 0.1184, 0.2776, 0.3001, 0.1471,
@@ -21,62 +29,62 @@ BENIGN_FEATURES = [
 
 
 class TestHealth:
-    def test_health_ok(self):
+    def test_health_ok(self, client):
         resp = client.get("/health")
         assert resp.status_code == 200
 
-    def test_health_status_field(self):
+    def test_health_status_field(self, client):
         resp = client.get("/health")
         assert resp.json()["status"] == "ok"
 
-    def test_health_model_loaded(self):
+    def test_health_model_loaded(self, client):
         resp = client.get("/health")
         assert resp.json()["model_loaded"] is True
 
 
 class TestPredict:
-    def test_predict_200(self):
+    def test_predict_200(self, client):
         resp = client.post("/predict", json={"features": MALIGNANT_FEATURES})
         assert resp.status_code == 200
 
-    def test_predict_response_schema(self):
+    def test_predict_response_schema(self, client):
         resp = client.post("/predict", json={"features": MALIGNANT_FEATURES})
         data = resp.json()
         assert "prediction" in data
         assert "probability" in data
         assert "label" in data
 
-    def test_predict_malignant(self):
+    def test_predict_malignant(self, client):
         resp = client.post("/predict", json={"features": MALIGNANT_FEATURES})
         data = resp.json()
         assert data["prediction"] == 0
         assert data["label"] == "malignant"
 
-    def test_predict_benign(self):
+    def test_predict_benign(self, client):
         resp = client.post("/predict", json={"features": BENIGN_FEATURES})
         data = resp.json()
         assert data["prediction"] == 1
         assert data["label"] == "benign"
 
-    def test_predict_probability_range(self):
+    def test_predict_probability_range(self, client):
         resp = client.post("/predict", json={"features": MALIGNANT_FEATURES})
         prob = resp.json()["probability"]
         assert 0.0 <= prob <= 1.0
 
 
 class TestPredictValidation:
-    def test_wrong_feature_count_422(self):
+    def test_wrong_feature_count_422(self, client):
         resp = client.post("/predict", json={"features": [1.0] * 10})
         assert resp.status_code == 422
 
-    def test_empty_features_422(self):
+    def test_empty_features_422(self, client):
         resp = client.post("/predict", json={"features": []})
         assert resp.status_code == 422
 
-    def test_missing_features_field_422(self):
+    def test_missing_features_field_422(self, client):
         resp = client.post("/predict", json={})
         assert resp.status_code == 422
 
-    def test_non_numeric_features_422(self):
+    def test_non_numeric_features_422(self, client):
         resp = client.post("/predict", json={"features": ["a"] * 30})
         assert resp.status_code == 422
