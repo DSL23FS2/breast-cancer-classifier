@@ -1,0 +1,36 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment
+.env
+vault/secrets.env
+
+# Experiments (модели версионируются через DVC, не git)
+experiments/*/trained_model.pkl
+experiments/*/logs.txt
+
+# DVC
+/tmp/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jenkins data (runtime, не конфиги)
+jenkins_home/
