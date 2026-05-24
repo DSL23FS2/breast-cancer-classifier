@@ -90,10 +90,12 @@ pipeline {
         // ── 7. Push to DockerHub ──────────────────────────────
         stage('Push Image') {
             when {
+                // branch 'x' работает только в Multibranch Pipeline.
+                // В обычном pipelineJob используем GIT_BRANCH (формат: "origin/develop").
                 anyOf {
-                    branch 'develop'
-                    branch 'main'
-                    branch 'release/*'
+                    expression { env.GIT_BRANCH ==~ /.*\/develop/ }
+                    expression { env.GIT_BRANCH ==~ /.*\/main/ }
+                    expression { env.GIT_BRANCH ==~ /.*\/release\/.+/ }
                 }
             }
             steps {
