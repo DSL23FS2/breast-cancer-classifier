@@ -1,0 +1,75 @@
+jenkins:
+  systemMessage: "Breast Cancer Classifier — CI/CD"
+  numExecutors: 2
+  scmCheckoutRetryCount: 2
+  mode: NORMAL
+
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          password: "${JENKINS_ADMIN_PASSWORD:-admin}"
+
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+  # ── Credentials ──────────────────────────────────────────────
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - usernamePassword:
+              scope: GLOBAL
+              id: "dockerhub-credentials"
+              username: "${DOCKERHUB_USER:-local}"
+              password: "${DOCKERHUB_PASS:-}"
+              description: "DockerHub credentials"
+
+# ── Seed job (pipeline из workspace) ─────────────────────────
+jobs:
+  - script: |
+      pipelineJob('breast-cancer-ci') {
+        description('CI: Lint → Test → DVC repro → Build → Push')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('/workspace')
+                }
+                branch('*/develop')
+              }
+            }
+            scriptPath('Jenkinsfile')
+          }
+        }
+        triggers {
+          scm('H/5 * * * *')
+        }
+      }
+
+      pipelineJob('breast-cancer-cd') {
+        description('CD: Pull → Up → Functional Test → Down')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('/workspace')
+                }
+                branch('*/main')
+              }
+            }
+            scriptPath('Jenkinsfile.cd')
+          }
+        }
+      }
+
+unclassified:
+  location:
+    url: "http://localhost:8080/"
+    adminAddress: "admin@example.com"
+  timestamper:
+    allPipelines: true
