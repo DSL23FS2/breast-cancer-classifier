@@ -1,0 +1,132 @@
+# docker-compose.yml — единый DevOps-контур
+# v1.0: api + jenkins
+# v2.0: + postgres
+# v3.0: + vault
+# v4.0: + zookeeper + kafka + consumer
+
+services:
+
+  # ── ML API сервис ────────────────────────────────────────────
+  api:
+    build: .
+    image: ${DOCKERHUB_USER:-local}/breast-cancer-api:${IMAGE_TAG:-latest}
+    container_name: bc-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - dvc-artifacts:/app/experiments
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # ── Jenkins CI/CD ────────────────────────────────────────────
+  jenkins:
+    build: ./jenkins
+    image: ${DOCKERHUB_USER:-local}/breast-cancer-jenkins:${IMAGE_TAG:-latest}
+    container_name: bc-jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dvc-artifacts:/dvc-artifacts
+      - .:/workspace:ro
+    environment:
+      - CASC_JENKINS_CONFIG=/var/jenkins_home/casc.yaml
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    networks:
+      - app-network
+    restart: unless-stopped
+
+# ── v2.0: PostgreSQL ──────────────────────────────────────────
+#  postgres:
+#    image: postgres:15
+#    container_name: bc-postgres
+#    ports:
+#      - "5432:5432"
+#    environment:
+#      - POSTGRES_DB=mldb
+#      - POSTGRES_USER=mluser
+#      - POSTGRES_PASSWORD=${DB_PASSWORD}
+#    volumes:
+#      - postgres-data:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U mluser -d mldb"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#    networks:
+#      - app-network
+
+# ── v3.0: Vault ───────────────────────────────────────────────
+#  vault:
+#    image: hashicorp/vault:1.15
+#    container_name: bc-vault
+#    ports:
+#      - "8200:8200"
+#    environment:
+#      - VAULT_DEV_ROOT_TOKEN_ID=devtoken
+#      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+#    cap_add:
+#      - IPC_LOCK
+#    healthcheck:
+#      test: ["CMD", "vault", "status"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#    networks:
+#      - app-network
+
+# ── v4.0: Zookeeper + Kafka + Consumer ────────────────────────
+#  zookeeper:
+#    image: confluentinc/cp-zookeeper:7.5.0
+#    container_name: bc-zookeeper
+#    environment:
+#      - ZOOKEEPER_CLIENT_PORT=2181
+#      - ZOOKEEPER_TICK_TIME=2000
+#    networks:
+#      - app-network
+#
+#  kafka:
+#    image: confluentinc/cp-kafka:7.5.0
+#    container_name: bc-kafka
+#    depends_on:
+#      - zookeeper
+#    ports:
+#      - "9092:9092"
+#    environment:
+#      - KAFKA_BROKER_ID=1
+#      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+#      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+#      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+#      - KAFKA_AUTO_CREATE_TOPICS_ENABLE=true
+#    healthcheck:
+#      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+#      interval: 15s
+#      timeout: 10s
+#      retries: 5
+#    networks:
+#      - app-network
+#
+#  consumer:
+#    build: .
+#    container_name: bc-consumer
+#    command: ["python", "src/consumer.py"]
+#    depends_on:
+#      - kafka
+#    environment:
+#      - PYTHONPATH=/app
+#    networks:
+#      - app-network
+
+volumes:
+  jenkins-data:
+  dvc-artifacts:
+  # postgres-data:    # v2.0+
+
+networks:
+  app-network:
+    driver: bridge
