@@ -1,0 +1,5 @@
+accuracy: 0.9561
+f1: 0.9645
+precision: 0.9855
+recall: 0.9444
+roc_auc: 0.9977
