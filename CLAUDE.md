@@ -230,26 +230,26 @@ git branch -d hotfix/fix-name
 ## Чеклист задач
 
 ### Scaffold
-- [ ] **feature/project-scaffold** — `git init`, GitFlow init, все папки, README, `.gitignore`, `Makefile`, `config.ini` (все секции, интеграции = false)
+- [x] **feature/project-scaffold** — `git init`, GitFlow init, все папки, README, `.gitignore`, `Makefile`, `config.ini` (все секции, интеграции = false)
 
 ### ML Pipeline (ТЗ ЛР1)
-- [ ] **feature/ml-pipeline** — EDA notebook, RandomForestClassifier ≥95% accuracy, `experiments/exp_0/`
-- [ ] **feature/python-scripts** — `preprocess.py`, `train.py`, `predict.py`, `utils.py`
+- [x] **feature/ml-pipeline** — EDA notebook, RandomForestClassifier ≥95% accuracy, `experiments/exp_0/`
+- [x] **feature/python-scripts** — `preprocess.py`, `train.py`, `predict.py`, `utils.py`
 
 ### API Service (ТЗ ЛР1)
-- [ ] **feature/api-service** — FastAPI `/predict` + `/health`, startup hook, pydantic schemas
-- [ ] **feature/tests** — pytest unit + integration, `test_0-2.json`
+- [x] **feature/api-service** — FastAPI `/predict` + `/health`, startup hook, pydantic schemas
+- [x] **feature/tests** — pytest unit + integration, `test_0-2.json`
 
 ### Версионирование данных (ТЗ ЛР1)
-- [ ] **feature/dvc-tracking** — `dvc init`, `dvc.yaml` pipeline, volume `dvc-artifacts`
+- [x] **feature/dvc-tracking** — `dvc init`, `dvc.yaml` pipeline, volume `dvc-artifacts`
 
 ### Контейнеризация (ТЗ ЛР1)
-- [ ] **feature/docker** — `Dockerfile` (api), `docker-compose.yml` v1 (api + jenkins + volumes), `requirements.txt`, `scenario.json`
-- [ ] **feature/jenkins-setup** — `jenkins/Dockerfile`, `jenkins/plugins.txt`, `jenkins/casc.yaml` (JCasC)
+- [x] **feature/docker** — `Dockerfile` (api), `docker-compose.yml` v1 (api + jenkins + volumes), `requirements.txt`, `scenario.json`
+- [x] **feature/jenkins-setup** — `jenkins/Dockerfile`, `jenkins/plugins.txt`, `jenkins/casc.yaml` (JCasC)
 
 ### CI/CD (ТЗ ЛР1)
-- [ ] **feature/ci-pipeline** — `Jenkinsfile`: Checkout→Lint→Test→`dvc repro`→Build→Push→`dev_sec_ops.yml`
-- [ ] **feature/cd-pipeline** — `Jenkinsfile.cd`: Pull→Up→FunctionalTest→Down
+- [x] **feature/ci-pipeline** — `Jenkinsfile`: Checkout→Lint→Test→`dvc repro`→Build→Push→`dev_sec_ops.yml`
+- [x] **feature/cd-pipeline** — `Jenkinsfile.cd`: Pull→Up→FunctionalTest→Down
 
 ### → release/v1.0 (сдача ЛР1)
 - [ ] merge develop→release/v1.0→main, `git tag v1.0`, ZIP, GitHub repo #1
