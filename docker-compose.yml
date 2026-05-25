@@ -4,6 +4,8 @@
 # v3.0: + vault
 # v4.0: + zookeeper + kafka + consumer
 
+name: bc
+
 services:
 
   # ── ML API сервис ────────────────────────────────────────────
