@@ -2,7 +2,7 @@
   "name": "predict_benign",
   "description": "POST /predict с доброкачественным образцом → prediction=1",
   "method": "POST",
-  "url": "http://localhost:8000/predict",
+  "path": "/predict",
   "body": {
     "features": [
       13.54, 14.36, 87.46, 566.3, 0.09779, 0.08129, 0.06664, 0.04781,
