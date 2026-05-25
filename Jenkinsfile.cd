@@ -6,6 +6,7 @@ pipeline {
     agent any
 
     environment {
+        DOCKERHUB_CREDS      = credentials('dockerhub-credentials')
         COMPOSE_PROJECT_NAME = "bc"
         BASE_URL             = "http://localhost:8000"
         SCENARIO_FILE        = "scenario.json"
@@ -27,35 +28,22 @@ pipeline {
         }
 
         // ── 2. Pull latest image ──────────────────────────────
-        // CI и CD работают на одном Docker-хосте, поэтому образ уже есть
-        // в локальном кэше после CI. Pull пробуем, но не падаем при ошибке
-        // сети — docker compose up возьмёт локальный образ.
         stage('Pull Image') {
             steps {
-                script {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKERHUB_USER',
-                        passwordVariable: 'DOCKERHUB_PASS'
-                    )]) {
-                        sh """
-                            echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USER}" --password-stdin \
-                                && docker pull ${DOCKERHUB_USER}/breast-cancer-api:latest \
-                                && docker logout \
-                                || echo "Pull from DockerHub failed — will use local image cache"
-                        """
-                    }
-                }
+                sh """
+                    echo "${DOCKERHUB_CREDS_PSW}" | docker login -u "${DOCKERHUB_CREDS_USR}" --password-stdin
+                    docker pull ${DOCKERHUB_CREDS_USR}/breast-cancer-api:latest
+                    docker logout
+                """
             }
         }
 
         // ── 3. Docker Compose Up ──────────────────────────────
         stage('Compose Up') {
             steps {
-                sh '''
-                    docker compose down --remove-orphans || true
-                    docker compose up -d api
-                '''
+                sh """
+                    DOCKERHUB_USER=${DOCKERHUB_CREDS_USR} docker compose up -d --force-recreate api
+                """
                 // Ждём, пока api отдаёт /health
                 sh '''
                     echo "Waiting for API to be ready..."
