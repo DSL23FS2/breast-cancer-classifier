@@ -131,15 +131,14 @@ if failed > 0:
     }
 
     post {
-        always {
-            sh 'docker compose down || true'
-        }
         success {
-            echo "CD passed — all functional tests green."
+            echo "CD passed — all functional tests green. API is live."
         }
         failure {
             echo "CD failed — collecting logs..."
             sh 'docker compose logs api || true'
+            // Останавливаем только api — Jenkins не трогаем
+            sh 'docker compose stop api && docker compose rm -f api || true'
         }
     }
 }
