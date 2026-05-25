@@ -27,6 +27,9 @@ pipeline {
         }
 
         // ── 2. Pull latest image ──────────────────────────────
+        // CI и CD работают на одном Docker-хосте, поэтому образ уже есть
+        // в локальном кэше после CI. Pull пробуем, но не падаем при ошибке
+        // сети — docker compose up возьмёт локальный образ.
         stage('Pull Image') {
             steps {
                 script {
@@ -36,9 +39,10 @@ pipeline {
                         passwordVariable: 'DOCKERHUB_PASS'
                     )]) {
                         sh """
-                            echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USER}" --password-stdin
-                            docker pull ${DOCKERHUB_USER}/breast-cancer-api:latest || true
-                            docker logout
+                            echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USER}" --password-stdin \
+                                && docker pull ${DOCKERHUB_USER}/breast-cancer-api:latest \
+                                && docker logout \
+                                || echo "Pull from DockerHub failed — will use local image cache"
                         """
                     }
                 }
@@ -49,6 +53,7 @@ pipeline {
         stage('Compose Up') {
             steps {
                 sh '''
+                    docker compose down --remove-orphans || true
                     docker compose up -d api
                 '''
                 // Ждём, пока api отдаёт /health
