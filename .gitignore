@@ -17,7 +17,10 @@ vault/secrets.env
 experiments/*/trained_model.pkl
 experiments/*/logs.txt
 
-# DVC
+# DVC — данные управляются пайплайном, не Git
+data/*.csv
+
+# DVC cache / tmp
 /tmp/
 
 # Jupyter

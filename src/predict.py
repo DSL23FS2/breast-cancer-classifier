@@ -36,7 +36,6 @@ def predict(features: Sequence[float]) -> dict:
             "probability": float # вероятность класса benign (1)
         }
     """
-    global _MODEL
     if _MODEL is None:
         load_model()
 

@@ -252,7 +252,7 @@ git branch -d hotfix/fix-name
 - [x] **feature/cd-pipeline** — `Jenkinsfile.cd`: Pull→Up→FunctionalTest→Down
 
 ### → release/v1.0 (сдача ЛР1)
-- [ ] merge develop→release/v1.0→main, `git tag v1.0`, ZIP, GitHub repo #1
+- [x] merge develop→release/v1.0→main, `git tag v1.0`, ZIP, GitHub repo #1
 
 ---
 
