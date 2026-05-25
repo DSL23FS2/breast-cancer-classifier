@@ -8,7 +8,7 @@ pipeline {
     environment {
         DOCKERHUB_CREDS      = credentials('dockerhub-credentials')
         COMPOSE_PROJECT_NAME = "bc"
-        BASE_URL             = "http://localhost:8000"
+        BASE_URL             = "http://api:8000"
         SCENARIO_FILE        = "scenario.json"
     }
 
@@ -87,7 +87,7 @@ for step in steps:
         test = json.load(tf)
 
     method      = test.get('method', 'GET')
-    url         = test.get('url', base_url)
+    url         = base_url.rstrip('/') + test['path'] if 'path' in test else test.get('url', base_url)
     body        = test.get('body')
     exp_status  = test.get('expected_status', 200)
     exp_body    = test.get('expected_body', {})
