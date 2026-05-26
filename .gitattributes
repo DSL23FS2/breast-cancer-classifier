@@ -4,3 +4,9 @@
 *.yml   text eol=lf
 Dockerfile* text eol=lf
 Jenkinsfile* text eol=lf
+
+# Text files — нормализовать к LF
+*.md    text eol=lf
+*.txt   text eol=lf
+*.ini   text eol=lf
+*.json  text eol=lf
