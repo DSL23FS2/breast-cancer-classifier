@@ -37,7 +37,7 @@ jobs:
             scm {
               git {
                 remote {
-                  url('https://github.com/DSL23FS2/breast-cancer-classifier.git')
+                  url('${GITHUB_REPO_URL}')
                 }
                 branch('*/develop')
               }
@@ -57,7 +57,7 @@ jobs:
             scm {
               git {
                 remote {
-                  url('https://github.com/DSL23FS2/breast-cancer-classifier.git')
+                  url('${GITHUB_REPO_URL}')
                 }
                 branch('*/main')
               }
